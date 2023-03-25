@@ -1,14 +1,23 @@
+/**
+ * @author Trevor Hartman
+ * @author Mike Quist
+ * @date 03/25/23
+ */
+
 import java.io.*;
 
 public class FileStats {
     private int numLines;
     private int numWords;
     private int numChars;
-    private boolean skipWhiteSpace;
+    private boolean skipWs;
     private File f;
 
     // **You will need to complete the FileStats class's constructor, so you can create FileStats objects**
-    public FileStats(File f, boolean skipWhiteSpace) throws FileNotFoundException {
+    public FileStats(File f, boolean skipWs) throws FileNotFoundException {
+        if (!f.exists()) {
+            throw new FileNotFoundException(String.format("File: %s does not exist.", f.getName()));
+        }
         /*
          * Use the File objects exists method to determine if the File passed in actually exists.
          * If it does not exist, throw the FileNotFoundException as shown below:
@@ -17,13 +26,16 @@ public class FileStats {
          */
 
         // Initialize FileStats' instance variables.
+        this.f = f;
+        this.skipWs = skipWs;
     }
 
     // **You will need to call this method!!!**
     // This method takes a line and counts the number of words in that line.
     private static int countWords(String line) {
         // If the line variable is null or an empty string, return 0 for the word count.
-        if (line == null || line.isEmpty()) { return 0; }
+        if (line == null || line.isEmpty()) {
+            return 0; }
         // Otherwise, use the split method to break the String apart into words
         // i.e. separate the words by whitespace (\\s+ == RegEx for whitespace)
         String[] words = line.split("\\s+");
@@ -47,15 +59,25 @@ public class FileStats {
 
     // **You will need to implement this method.**
     // This method should take a line and count the number of characters in that line.
-    private static int countChars(String line, boolean skipWhiteSpace) {
+    private static int countChars(String line, boolean skipWs) {
         // 1. If skipWhiteSpace is true, use the removeSpaces method to remove whitespace from the line.
-
+        if (skipWs) {
+            line = removeSpaces(line);
+        }
         // 2. Now write a loop to count the number of characters in the line.
         //    a. HINT: to get the length of a String, use its .length() method!
-
+        if (skipWs) {
+            line = removeSpaces(line);
+        }
+        int count = line.length();
+        if (!skipWs) {
+            count++; // add one to count for newline character
+        }
+        return count;
+    }
         // 3. Return the count of characters.
         //    a. HINT: If whitespace isn't being skipped, a newline character (i.e. \n) counts as a character.
-    }
+
 
     // An overloaded method for the read method you will be writing!
     public void read(File f) throws FileNotFoundException, IOException {
@@ -69,6 +91,14 @@ public class FileStats {
     // **You will need to implement this method.**
     // This method should use the java.io.BufferedReader class to efficiently read the File object line-by-line
     public void read() throws FileNotFoundException, IOException {
+        try (BufferedReader br = new BufferedReader(new FileReader(f))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                numLines++;
+                numWords += countWords(line);
+                numChars += countChars(line, skipWs);
+            }
+        }
         // 1. Create a BufferedReader object: BufferedReader is a Java class that is very efficient at reading input due
         //    to its buffering mechanisms.
         //    a. HINT: BufferReader's Constructor takes another Reader as an argument. Consider FileReader
